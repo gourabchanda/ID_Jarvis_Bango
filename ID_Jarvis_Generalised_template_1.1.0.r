@@ -53,6 +53,7 @@ penetration.customer.region.mapping <- tibble::as_tibble(read_xlsx(paste0(mappin
 psales.material.mt.mapping <- tibble::as_tibble(read_xlsx(paste0(mapping.path),sheet = "Material_PS_Sellout",col_names = T,guess_max = 100))
 sellout.material.mapping <- tibble::as_tibble(read_xlsx(paste0(mapping.path),sheet = "Sellout Material",col_names = T,guess_max = 100))
 sellout.customer.mapping <- tibble::as_tibble(read_xlsx(paste0(mapping.path),sheet = "Sell out Customer",col_names = T,guess_max = 100))
+subrand.mapping <- tibble::as_tibble(read_xlsx(paste0(mapping.path),sheet = "Sub brands",col_names = T,guess_max = 100))
 
 ###################################################################### Data Preprocessing User Defined Functions ##################################################
 
