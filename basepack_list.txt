@@ -1,0 +1,20 @@
+write_xlsx(packgroup.bmbp.cej,paste0(directory.path,"/packgroup.bmbp.cej.xlsx"))
+write_xlsx(packgroup.bmbp.oi,paste0(directory.path,"/packgroup.bmbp.oi.xlsx"))
+write_xlsx(packgroup.bmbp.sumatera,paste0(directory.path,"/packgroup.bmbp.sumatera.xlsx"))
+write_xlsx(packgroup.bmbp.wj,paste0(directory.path,"/packgroup.bmbp.wj.xlsx"))
+
+packgroup.bmbp.cej <- data.frame(lapply(packgroup.bmbp.cej, gsub, pattern='NA', replacement=''))
+packgroup.bmbp.oi <- data.frame(lapply(packgroup.bmbp.oi, gsub, pattern='NA', replacement=''))
+packgroup.bmbp.sumatera <- data.frame(lapply(packgroup.bmbp.sumatera, gsub, pattern='NA', replacement=''))
+packgroup.bmbp.wj <- data.frame(lapply(packgroup.bmbp.wj, gsub, pattern='NA', replacement=''))
+
+********************************************************** Basepack(list)************************************************
+BANGO KECAP MANIS 620ML
+BANGO KECAP MANIS 275ML
+BANGO KECAP MANIS 220ML
+BANGO KECAP MANIS PEDAS 220ML
+BANGO KECAP MANIS PEDAS 135ML
+BANGO SOY/OYSTER/FISH SAUCE MANIS 60ML
+BANGO SOY/OYSTR/FISH SUCE MNIS SCHT 30ML
+BANGO KECAP MANIS 135ML
+BANGO SOY/OYSTER/FISH KECAP MANIS 580ML
