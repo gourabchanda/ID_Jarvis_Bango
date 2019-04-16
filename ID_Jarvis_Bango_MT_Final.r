@@ -118,7 +118,7 @@ tts.account.mapping <- mapping(input=tts.mapped.mt.input,map =banner.mapping, ma
 #filter out the 9 basepacks and all the account for which it's "MT" and "All"
 tts.mt.mapped <- tts.account.mapping%>%
   filter(`REQUIRED BASEPACK`!=0)
-tts.mt.mapped %<>%filter(str_detect(`Account/Region`,"MT")|`Account/Region`=="ALL")
+tts.mt.mapped %<>%filter(str_detect(`Account/Region`,"MT"))
 #perform the grouping of the tts.mt.mapped based on the {Fiscal Year/Period,Required Base Pack,Account/Region}
 tts.mt.mapped.aggregate <- tts.mt.mapped%>%
   group_by(`Fiscal year/period`,`REQUIRED BASEPACK`,`Account/Region`)%>%
@@ -130,7 +130,7 @@ tts.unmapped.mt.df <- tts.unmapped.mt.input%>%
 tts.unmapped.account.mapping <- merge.data.frame(tts.unmapped.mt.df,unmapped.tts.mapping,by.x = "key",by.y = "Key")
 tts.mt.unmapped <- tts.unmapped.account.mapping%>%
   filter(`REQUIRED BASEPACK`!=0)
-tts.mt.unmapped%<>%filter(str_detect(`Account/Region`,"MT")|`Account/Region`=="ALL")
+tts.mt.unmapped%<>%filter(str_detect(`Account/Region`,"MT"))
 tts.mt.unmapped%<>%convert(num(TTS:EOT))
 tts.mt.unmapped.aggregate <- tts.mt.unmapped%>%
   group_by(`Fiscal year/period`,`REQUIRED BASEPACK`,`Account/Region`)%>%
@@ -158,7 +158,7 @@ bmi.mapped.mt.data <- subset(x = bmi.mapped.mt.data ,subset = Mapping_Basepack==
 bmi.mapped.mt.cust <- merge.data.frame(bmi.mapped.mt.data,y = banner.mapping,by.x = "Banner",by.y ="Banner code")
 #filter out the observations for MT and All
 bmi.mapped.mt.cust.filtered <- bmi.mapped.mt.cust%>%
-  filter(str_detect(`Account/Region`,"MT")|`Account/Region`=="ALL")
+  filter(str_detect(`Account/Region`,"MT"))
 #aggregate the KPI's after grouping them
 bmi.mapped.mt.filtered.aggregate <- bmi.mapped.mt.cust.filtered%>%
   group_by(`Fiscal year/period`,Mapping_Basepack,`Account/Region`)%>%
@@ -183,7 +183,7 @@ unmapped.bmi.key <- unmapped.bmi.mapping[,c(1,4)]
 bmi.unmapped.mt.data.mapped <- merge.data.frame(bmi.unmapped.mt.data,unmapped.bmi.key,by.x = "key",by.y = "Key")
 #filter out the accounts which is contain "MT" and "All"
 bmi.unmapped.mt.data.mapped.filtered <- bmi.unmapped.mt.data.mapped%>%
-  filter(str_detect(`Account/Region`,"MT")|`Account/Region`=="ALL")
+  filter(str_detect(`Account/Region`,"MT"))
 #convert the KPI's from character to numeric dt
 bmi.unmapped.mt.data.mapped.filtered %<>%convert(num(`Brand & Marketing Investment`:`Promo Agency Remuneration Fees & Commissions Consumer`))
 #perfor the group by and summarise the KPI's for the BMI unmapped 
@@ -246,7 +246,7 @@ consolidated.list4 <- merge.data.frame(x=consolidated.list3,y=sellout.basepack.f
 #seggrgate the consolidated list  into 3 regions : {MT "Alfamart" + All } , {MT "Indomart" + All } ,{MT "Carefourr"+All}
 
 alfamart.list <- consolidated.list4%>%
-  filter(str_detect(Customer,"MT Alfa")|Customer=="ALL")
+  filter(str_detect(Customer,"MT Alfa"))
 alfamart.list$`Sales Organization` <- "9001";alfamart.list$Category <- "SAVOURY"
 alfamart.list$Sector <- "SEASONINGS"  ; alfamart.list$Channel <- "MODERN TRADE"
 alfamart.list$Brand <- "BANGO"
@@ -316,7 +316,7 @@ alfamart.headers <- c("Month",
 colnames(alfamart.final.list) <- alfamart.headers
 
 indomart.list <- consolidated.list4%>%
-  filter(str_detect(Customer,"MT Indo")|Customer=="ALL")
+  filter(str_detect(Customer,"MT Indo"))
 indomart.list$`Sales Organization` <- "9001";indomart.list$Category <- "SAVOURY"
 indomart.list$Sector <- "SEASONINGS"  ; indomart.list$Channel <- "MODERN TRADE"
 indomart.list$Brand <- "BANGO"
@@ -389,7 +389,7 @@ colnames(indomart.final.list) <- indomart.headers
 
 
 Carrefour.list <- consolidated.list4%>%
-  filter(str_detect(Customer,"MT Carrefour")|Customer=="ALL")
+  filter(str_detect(Customer,"MT Carrefour"))
 Carrefour.list%<>%select(-c(Sellout_Value,Sellout_Volume,unit_price))
 Carrefour.list$`Sales Organization` <- "9001";Carrefour.list$Category <- "SAVOURY"
 Carrefour.list$Sector <- "SEASONINGS"  ; Carrefour.list$Channel <- "MODERN TRADE"
@@ -816,6 +816,238 @@ Mini.final.data <- format(Mini.final.data,scientific=F)
 
 writexl::write_xlsx(Mini.final.data,paste0(directory.path,"/Mini.final.data.xlsx"))
 
-################################################################### 
+###################################################################  ID Psales (Bango-Account MT Model) ####################################
+#get the Account/region from the customer mapping file 
+cust.account.map <- customer.mapping%>%
+  select(c(`Customer Code`,`Account/Region`))
+#get the conversion factor from the conversion mapping file
+conv.account.map <- conversion.mapping%>%
+  select(c(MATNR,Conversion))
+#perform the mapping and merge the  input data frame with the {product mapping , customer mapping and conversion mapping }
+psales.account.input <- merge.data.frame(x = id.psales.bango,y =product.mapping,by.x ="Material_Code",by.y = "Material Code")%>%
+  merge.data.frame(x = .,y = cust.account.map,by.x = "Customer_Code_8D",by.y ="Customer Code")%>%
+  merge.data.frame(x = .,y = conv.account.map,by.x = "Material_Code",by.y = "MATNR")
+#filter out the observation for which the account/region is in the account list {MT Indomart , MT Alfamart , MT Carrefour}
+mt.account.list <- c("MT Alfamart","MT Carrefour","MT Indomart")
+psales.account.df <- psales.account.input%>%
+  filter(`Account/Region` %in% mt.account.list)
+#calculate the dervied KPI's from the given KPI's and then group and summarise the KPI's 
+
+#rename the column and calculate the derived KPI's psales_kg and psales_tonns KPI's
+psales.account.df <- setnames(psales.account.df,c("Material Desc.x"),c("Material Desc"))
+psales.account.df%<>%mutate(psales_KG=`Sales Quantity`*Conversion,psales_Tonns=psales_KG/1000)
+
+#perform the group by and summarise the KPI's
+psales.account.aggregate <- psales.account.df%>%
+  group_by(`Fiscal year/period`,BRAND,`Account/Region`)%>%
+  summarise(`Gross Sales Value (GSV)`=sum(`Gross Sales Value (GSV)`),`Sales Quantity`=sum(`Sales Quantity`),NIV=sum(NIV),psales_KG=sum(psales_KG),psales_Tonns=sum(psales_Tonns))
+#perform the month mapping for the Fiscal Period column 
+psales.account.aggregate <- merge.data.frame(psales.account.aggregate,month.mapping,by.x = "Fiscal year/period",by.y ="Primary sales" )
+psales.account.aggregate%<>%select(-c(`Secondary sales`:TTS_BMI,Sellout,`Fiscal year/period`))
+psales.account.aggregate%<>%select(c(Month,everything()))
+###################################################################  ID sellout  (Bango-Account MT Model) ####################################
+sellout.account <- sellout.bango_account.aggregate%>%
+  mutate(BRAND="BANGO")
+sellout.account%<>%select(c(Month,BRAND,Customer,everything()))
+sellout.account <- setnames(sellout.account,old = "Customer",new = "Account/Region")
+##################################################################  ID DROO (Bango-Account MT Model) #############################################
+droo.account.input <- merge.data.frame(x = id.droo.bango,y =product.mapping,by.x ="Material_Code",by.y = "Material Code")%>%
+  merge.data.frame(x = .,y = cust.account.map,by.x = "STP_Code",by.y ="Customer Code")%>%
+  merge.data.frame(x = .,y = conv.account.map,by.x = "Material_Code",by.y = "MATNR")
+
+#filter out the sub channel which is HSM and Mini
+droo.account.input%<>%filter(`Account/Region`%in% mt.account.list)
+droo.account.df <- setnames(droo.account.input,c("Material Desc.x"),c("Material Desc"))
+#summarise and aggregate the KPI's 
+droo.account.aggregate <- droo.account.df%>%
+  group_by(`Calendar Year/Month`,BRAND,`Account/Region`)%>%
+  summarise(`OriginalOrder Qty`=sum(`OriginalOrder Qty`),`Final Customer Expected Order Qty`=sum(`Final Customer Expected Order Qty`),`Dispatched Qty`=sum(`Dispatched Qty`))
+
+droo.account.aggregate%<>%mutate(DR=(`Dispatched Qty`/`Final Customer Expected Order Qty`*100),DROO=(`Dispatched Qty`/`OriginalOrder Qty`*100))
+#perform the month-year mapping <month>-<year>
+droo.account.aggregate <- merge.data.frame(droo.account.aggregate,month.mapping,by.x = "Calendar Year/Month",by.y ="Sec stock_DROO_Penetration" )
+droo.account.aggregate%<>%select(-c(`Primary sales`,TTS_BMI,`Secondary sales`,`Calendar Year/Month`,Sellout))
+droo.account.aggregate[which(is.nan(droo.account.aggregate$DR)),"DR"] <- 0
+droo.account.aggregate%<>%select(c(Month,everything()))
+
+######################################################### ID TTS Mapped (Bango-Account MT Model) ###############################################
+
+tts.account.mapped.input <- tts.account.mapping
+#filter out the observation for which Sub Channel is {HSM,Mini}
+tts.account.mapped.input%<>%filter(`Account/Region`%in% mt.account.list)
+#group-by and aggregate the KPI's based on the key {Month,Brand,Sub Channel}
+tts.account.mapped.aggregate <- tts.account.mapped.input%>%
+  group_by(`Fiscal year/period`,BRAND,`Account/Region`)%>%
+  summarise(TTS=sum(TTS),BBT=sum(BBT),`BBT - Place`=sum(`BBT - Place`),`BBT - Place on invoice`=sum(`BBT - Place on invoice`),`BBT - Place off invoice`=sum(`BBT - Place off invoice`),`BBT - Price`=sum(`BBT - Price`),`CPP on invoice`=sum(`CPP on invoice`),`CPP off invoice`=sum(`CPP off invoice`),`BBT - Product`=sum(`BBT - Product`),`BBT - Pack`=sum(`BBT - Pack`),`BBT - Proposition`=sum(`BBT - Proposition`),`BBT - Promotion`=sum(`BBT - Promotion`),EOT=sum(EOT))
+
+######################################################### ID TTS unMapped (Bango-Account MT Model) ###############################################
+tts.account.unmapped.input <- tts.unmapped.mt.input
+#filter out the observations for which the Account initiates with "MT" 
+tts.account.unmapped.df <- tts.account.unmapped.input%>%
+  unite(col = "key",c("Banner","Trade Format Level 2","Local Sales Force 2(m.d.)","Local Sales Force 3(m.d.)","Key Customer Level3"),sep="",remove = F)
+tts.unmapped.account.mapping <- merge.data.frame(tts.account.unmapped.df,unmapped.tts.mapping,by.x = "key",by.y = "Key")
+#filter out the observations for which the Account starts with "MT"
+tts.unmapped.account.df <- tts.unmapped.account.mapping%>%
+  filter(str_detect(`Account/Region`,"MT"))
+
+tts.unmapped.account.df%<>%convert(num(TTS:EOT))
+#group-by and aggregate the KPI's based on the key {Month,Brand,Sub Channel}
+tts.unmapped.account.aggregate <- tts.unmapped.account.df%>%
+  group_by(`Fiscal year/period`,BRAND,`Account/Region`)%>%
+  summarise(TTS=sum(TTS),BBT=sum(BBT),`BBT - Place`=sum(`BBT - Place`),`BBT - Place on invoice`=sum(`BBT - Place on invoice`),`BBT - Place off invoice`=sum(`BBT - Place off invoice`),`BBT - Price`=sum(`BBT - Price`),`CPP on invoice`=sum(`CPP on invoice`),`CPP off invoice`=sum(`CPP off invoice`),`BBT - Product`=sum(`BBT - Product`),`BBT - Pack`=sum(`BBT - Pack`),`BBT - Proposition`=sum(`BBT - Proposition`),`BBT - Promotion`=sum(`BBT - Promotion`),EOT=sum(EOT))
+############################################################## ID TTS consolidation (Bango-Account MT Model) ###############################################
+tts.account.aggregate <- rbind(tts.account.mapped.aggregate,tts.unmapped.account.aggregate)
+#group and summarise the KPI's 
+
+tts.account.aggregate%<>%
+  group_by(`Fiscal year/period`,BRAND,`Account/Region`)%>%
+  summarise(TTS=sum(TTS),BBT=sum(BBT),`BBT - Place`=sum(`BBT - Place`),`BBT - Place on invoice`=sum(`BBT - Place on invoice`),`BBT - Place off invoice`=sum(`BBT - Place off invoice`),`BBT - Price`=sum(`BBT - Price`),`CPP on invoice`=sum(`CPP on invoice`),`CPP off invoice`=sum(`CPP off invoice`),`BBT - Product`=sum(`BBT - Product`),`BBT - Pack`=sum(`BBT - Pack`),`BBT - Proposition`=sum(`BBT - Proposition`),`BBT - Promotion`=sum(`BBT - Promotion`),EOT=sum(EOT))
+#perform the Month - year mapping and get the period 
+tts.account.aggregate.final <- merge.data.frame(x = tts.account.aggregate,y = month.mapping,by.x = "Fiscal year/period" , by.y = "TTS_BMI")
+tts.account.aggregate.final%<>%select(-c(`Primary sales`:`Sec stock_DROO_Penetration`,Sellout,`Fiscal year/period`))
+tts.account.aggregate.final%<>%select(c(Month,everything()))
+
+############################################################# BMI Mapped (Bango-Account MT Model) ############################################
+bmi.account.mapped.input <- bmi.mapped.bango
+account.mapped.bmi.key<- banner.mapping[,c(2,5)]
+
+bmi.account.mapped.input <- merge.data.frame(bmi.account.mapped.input,account.mapped.bmi.key,by.x = "Banner",by.y = "Banner code",all.x = T)
+
+#filter out the observation for which the sub channel is {HSM.Mini}
+bmi.account.mapped.input%<>%filter(str_detect(`Account/Region`,"MT"))
+#perform the grouping and the aggregation 
+bmi.account.mapped.aggregate <- bmi.account.mapped.input%>%
+  group_by(`Fiscal year/period`,Brand,`Account/Region`)%>%
+  summarise(X..Brand...Marketing.Investment=sum(X..Brand...Marketing.Investment),X..Brand...Marketing.Investment.Trade=sum(X..Brand...Marketing.Investment.Trade),X..Brand...Marketing.Investment.Consumer=sum(X..Brand...Marketing.Investment.Consumer),X..Promotional.Expenses=sum(X..Promotional.Expenses),X....Promotion.Packaging.Material.Cost=sum(X....Promotion.Packaging.Material.Cost),X......Promotion.Packaging.Material.Cost.Trade=sum(X......Promotion.Packaging.Material.Cost.Trade),X......Promotion.Packaging.Material.Cost.Consumer=sum(X......Promotion.Packaging.Material.Cost.Consumer),X....Promotion.Repacking.Cost=sum(X....Promotion.Repacking.Cost),X......Promotion.Repacking.Cost.Trade=sum(X....Promotion.Repacking.Cost),X......Promotion.Repacking.Cost.Trade=sum(X......Promotion.Repacking.Cost.Trade),X......Promotion.Repacking.Cost.Consumer=sum(X......Promotion.Repacking.Cost.Consumer),X....Promotion.Communication.Material.Cost=sum(X....Promotion.Communication.Material.Cost),X......Promotion.Communication.Material.Cost.Trade=sum(X......Promotion.Communication.Material.Cost.Trade),X......Promotion.Communication.Material.Cost.Consumer=sum(X......Promotion.Communication.Material.Cost.Consumer),X....Promo.Samples..Gifts.and.Incentive.Costs=sum(X....Promo.Samples..Gifts.and.Incentive.Costs),X......Promo.Samples..Gifts.and.Incentive.Costs.Consumer=sum(X......Promo.Samples..Gifts.and.Incentive.Costs.Consumer),X....Promotion.Team.Cost=sum(X....Promotion.Team.Cost),X......Promotion.Team.Cost.Trade=sum(X......Promotion.Team.Cost.Trade),X......Promotion.Team.Cost.Consumer=sum(X......Promotion.Team.Cost.Consumer),X....Promo.Agency.Remun.Fees...Commissions=sum(X....Promo.Agency.Remun.Fees...Commissions),X......Promo.Agency.Remuneration.Fees...Commissions.Trade=sum(X......Promo.Agency.Remuneration.Fees...Commissions.Trade),X......Promo.Agency.Remuneration.Fees...Commissions.Consumer=sum(X......Promo.Agency.Remuneration.Fees...Commissions.Consumer))
+
+#rename the KPI's columns
+bmi.account.mapped.aggregate <- bmi.account.mapped.aggregate%>%
+  dplyr::rename(`Brand & Marketing Investment`=X..Brand...Marketing.Investment,`Brand & Marketing Investment Trade`=X..Brand...Marketing.Investment.Trade,`Brand & Marketing Investment Consumer`=X..Brand...Marketing.Investment.Consumer,`Promotional Expenses`=X..Promotional.Expenses,`Promotion Packaging Material Cost`=X....Promotion.Packaging.Material.Cost,`Promotion Communication Material Cost Trade`=X......Promotion.Communication.Material.Cost.Trade,`Promotion Packaging Material Cost Consumer`=X......Promotion.Packaging.Material.Cost.Consumer,`Promotion Repacking Cost`=X....Promotion.Repacking.Cost,`Promotion Repacking Cost Trade`=X......Promotion.Repacking.Cost.Trade,`Promotion Repacking Cost Consumer`=X......Promotion.Repacking.Cost.Consumer,`Promotion Communication Material Cost`=X....Promotion.Communication.Material.Cost,`Promotion Communication Material Cost Consumer`=X......Promotion.Communication.Material.Cost.Consumer,`Promo Samples, Gifts and Incentive Costs` =X....Promo.Samples..Gifts.and.Incentive.Costs,`Promo Samples, Gifts and Incentive Costs Consumer`=X......Promo.Samples..Gifts.and.Incentive.Costs.Consumer,`Promotion Team Cost`=X....Promotion.Team.Cost,`Promotion Team Cost Trade`=X......Promotion.Team.Cost.Trade,`Promotion Team Cost Consumer`=X......Promotion.Team.Cost.Consumer,`Promo Agency Remun Fees & Commissions`=X....Promo.Agency.Remun.Fees...Commissions,`Promo Agency Remuneration Fees & Commissions Trade`=X......Promo.Agency.Remuneration.Fees...Commissions.Trade,`Promo Agency Remuneration Fees & Commissions Consumer`=X......Promo.Agency.Remuneration.Fees...Commissions.Consumer)
+bmi.account.mapped.aggregate%<>%dplyr::rename(`Promotion Packaging Material Cost Trade`=X......Promotion.Packaging.Material.Cost.Trade)
+
+############################################################### BMI unmapped (bango-Account MT model) #############################################
+bmi.account.unmapped.input <- id.bmi.unmapped.df1
+#bmi unmapped data mapping for the key 
+account.unmapped.bmi.key <- unmapped.bmi.mapping[,c(1,4)]
+#merge the account/region based on the key 
+bmi.unmapped.account.data.mapped <- merge.data.frame(bmi.account.unmapped.input,account.unmapped.bmi.key,by.x = "key",by.y = "Key")
+#filter out the observation for which the sub channel is {HSM.Mini} and convert the KPI's from Char to num
+bmi.unmapped.account.data.mapped%<>%filter(str_detect(`Account/Region`,"MT"))
+bmi.unmapped.account.data.mapped%<>%convert(num(`Brand & Marketing Investment`:`Promo Agency Remuneration Fees & Commissions Consumer`))
+#perfor the group by and summarise the KPI's for the BMI unmapped 
+bmi.account.unmapped.aggregate <- bmi.unmapped.account.data.mapped%>%
+  group_by(`Fiscal year/period`,Brand_Name,`Account/Region`)%>%
+  summarise(`Brand & Marketing Investment`=sum(`Brand & Marketing Investment`),`Brand & Marketing Investment Trade`=sum(`Brand & Marketing Investment Trade`),`Brand & Marketing Investment Consumer`=sum(`Brand & Marketing Investment Consumer`),`Promotional Expenses`=sum(`Promotional Expenses`),`Promotion Packaging Material Cost`=sum(`Promotion Packaging Material Cost`),`Promotion Packaging Material Cost Trade`=sum(`Promotion Repacking Cost Trade`),`Promotion Packaging Material Cost Consumer`=sum(`Promotion Packaging Material Cost Consumer`),`Promotion Repacking Cost`=sum(`Promotion Repacking Cost`),`Promotion Repacking Cost Trade`=sum(`Promotion Repacking Cost Trade`),`Promotion Repacking Cost Consumer`=sum(`Promotion Repacking Cost Consumer`),`Promotion Communication Material Cost`=sum(`Promotion Communication Material Cost`),`Promotion Communication Material Cost Trade`=sum(`Promotion Communication Material Cost Trade`),`Promotion Communication Material Cost Consumer`=sum(`Promotion Communication Material Cost Consumer`),`Promo Samples, Gifts and Incentive Costs`=sum(`Promo Samples, Gifts and Incentive Costs`),`Promo Samples, Gifts and Incentive Costs Consumer`=sum(`Promo Samples, Gifts and Incentive Costs Consumer`),`Promotion Team Cost`=sum(`Promotion Team Cost`),`Promotion Team Cost Trade`=sum(`Promotion Team Cost Trade`),`Promotion Team Cost Consumer`=sum(`Promotion Team Cost Consumer`),`Promo Agency Remun Fees & Commissions`=sum(`Promo Agency Remun Fees & Commissions`),`Promo Agency Remuneration Fees & Commissions Trade`=sum(`Promo Agency Remuneration Fees & Commissions Trade`),`Promo Agency Remuneration Fees & Commissions Consumer`=sum(`Promo Agency Remuneration Fees & Commissions Consumer`))
+
+bmi.account.unmapped.aggregate <- setnames(bmi.account.unmapped.aggregate,old = "Brand_Name",new = "Brand")
+
+############################################################### BMI consolidation (bango-Account MT model) #############################################
+bmi.account.aggregate <- rbind(bmi.account.mapped.aggregate,bmi.account.unmapped.aggregate)
+#perform the group by and the aggregation of the KPi's
+bmi.account.aggregate.final <- bmi.account.aggregate%>%
+  group_by(`Fiscal year/period`,Brand,`Account/Region`)%>%
+  summarise(`Brand & Marketing Investment`=sum(`Brand & Marketing Investment`),`Brand & Marketing Investment Trade`=sum(`Brand & Marketing Investment Trade`),`Brand & Marketing Investment Consumer`=sum(`Brand & Marketing Investment Consumer`),`Promotional Expenses`=sum(`Promotional Expenses`),`Promotion Packaging Material Cost`=sum(`Promotion Packaging Material Cost`),`Promotion Packaging Material Cost Trade`=sum(`Promotion Repacking Cost Trade`),`Promotion Packaging Material Cost Consumer`=sum(`Promotion Packaging Material Cost Consumer`),`Promotion Repacking Cost`=sum(`Promotion Repacking Cost`),`Promotion Repacking Cost Trade`=sum(`Promotion Repacking Cost Trade`),`Promotion Repacking Cost Consumer`=sum(`Promotion Repacking Cost Consumer`),`Promotion Communication Material Cost`=sum(`Promotion Communication Material Cost`),`Promotion Communication Material Cost Trade`=sum(`Promotion Communication Material Cost Trade`),`Promotion Communication Material Cost Consumer`=sum(`Promotion Communication Material Cost Consumer`),`Promo Samples, Gifts and Incentive Costs`=sum(`Promo Samples, Gifts and Incentive Costs`),`Promo Samples, Gifts and Incentive Costs Consumer`=sum(`Promo Samples, Gifts and Incentive Costs Consumer`),`Promotion Team Cost`=sum(`Promotion Team Cost`),`Promotion Team Cost Trade`=sum(`Promotion Team Cost Trade`),`Promotion Team Cost Consumer`=sum(`Promotion Team Cost Consumer`),`Promo Agency Remun Fees & Commissions`=sum(`Promo Agency Remun Fees & Commissions`),`Promo Agency Remuneration Fees & Commissions Trade`=sum(`Promo Agency Remuneration Fees & Commissions Trade`),`Promo Agency Remuneration Fees & Commissions Consumer`=sum(`Promo Agency Remuneration Fees & Commissions Consumer`))
+
+#perform the month-year mapping by using the month mapping df
+bmi.account.aggregate.final <- merge.data.frame(x = bmi.account.aggregate.final,y = month.mapping,by.x = "Fiscal year/period" , by.y = "TTS_BMI")
+bmi.account.aggregate.final%<>%select(-c(`Primary sales`:`Sec stock_DROO_Penetration`,Sellout,`Fiscal year/period`))
+bmi.account.aggregate.final%<>%select(c(Month,everything()))
+bmi.account.aggregate.final$Brand <- toupper(bmi.account.aggregate.final$Brand)
+bmi.account.aggregate.final <- setnames(bmi.account.aggregate.final,old = "Brand",new = "BRAND")
+
+############################################################### Final COnsolidation( bango-Account MT model)########################################
+psales.account.final <- psales.account.aggregate ; sellout.account.final <- sellout.account
+droo.account.final <- droo.account.aggregate ; tts.account.final <- tts.account.aggregate.final
+bmi.account.final <- bmi.account.aggregate.final
+
+account.pkey <- c("Month","BRAND","Account/Region")
+
+consolidated.account.list1 <- merge.data.frame(psales.account.final,droo.account.final,by = account.pkey)
+consolidated.account.list2 <- merge.data.frame(consolidated.account.list1,tts.account.final,by = account.pkey,all.y = T)
+consolidated.account.list3 <- merge.data.frame(consolidated.account.list2,bmi.account.final,by = account.pkey,all.y = T)
+consolidated.account.list4 <- merge.data.frame(consolidated.account.list3,sellout.account.final,by = account.pkey,all.x = T)
+
+account.final.data <- consolidated.account.list4
+
+account.final.data$`Sales Organization` <- "9001";account.final.data$Category <- "SAVOURY"
+account.final.data$Sector <- "SEASONINGS" ; account.final.data$Channel <- "MODERN TRADE"
+account.final.data %<>% select(c(Month,`Sales Organization`,Category,Sector,BRAND,Channel,`Account/Region`,everything()))
+account.final.data <- setnames(account.final.data,old = "Account/Region" ,new = "Customer")
+
+#select the column names as per the output 
+
+account.col.headers <- c("Month","Sales Organization","Category","Sector","Brand","Channel","Customer",
+                         
+                         "Bango_GSV",
+                         "Bango_Sales Qty",
+                         "Bango_NIV",
+                         "Bango_Sales Qty(Kg)",
+                         "Bango_Sales Qty(Tonns)",
+                         "Bango_Original",
+                         "Order Qty.",
+                         "Bango_Final Customer Expected Order Qty.",
+                         "Bango_Dispatched Qty.",
+                         "Bango_DR",
+                         "Bango_DROO",
+                         "Bango_TTS",
+                         "Bango_BBT",
+                         "Bango_BBT - Place",
+                         "Bango_BBT - Place on invoice",
+                         "Bango_BBT - Place off invoice",
+                         "Bango_BBT - Price",
+                         "Bango_CPP on invoice",
+                         "Bango_CPP off invoice",
+                         "Bango_BBT - Product",
+                         "Bango_BBT - Pack",
+                         "Bango_BBT - Proposition",
+                         "Bango_BBT - Promotion",
+                         "Bango_EOT",
+                         "Bango_Brand & Marketing Investment",
+                         "Bango_Brand & Marketing Investment Trade",
+                         "Bango_Brand & Marketing Investment Consumer",
+                         "Bango_Promotional Expenses",
+                         "Bango_Promotion Packaging Material Cost",
+                         "Bango_Promotion Packaging Material Cost Trade",
+                         "Bango_Promotion Packaging Material Cost Consumer",
+                         "Bango_Promotion Repacking Cost",
+                         "Bango_Promotion Repacking Cost Trade",
+                         "Bango_Promotion Repacking Cost Consumer",
+                         "Bango_Promotion Communication Material Cost",
+                         "Bango_Promotion Communication Material Cost Trade",
+                         "Bango_Promotion Communication Material Cost Consumer",
+                         "Bango_Promo Samples, Gifts and Incentive Costs",
+                         "Bango_Promo Samples, Gifts and Incentive Costs Consumer",
+                         "Bango_Promotion Team Cost",
+                         "Bango_Promotion Team Cost Trade",
+                         "Bango_Promotion Team Cost Consumer",
+                         "Bango_Promo Agency Remun Fees & Commissions",
+                         "Bango_Promo Agency Remuneration Fees & Commissions Trade",
+                         "Bango_Promo Agency Remuneration Fees & Commissions Consumer",
+                         "Bango_Sell out Value (IDR)",
+                         "Bango_Unit Price",
+                         "Bango_Sell out Volume (KGs)"
+                         
+)
+  
+
+#seggregate the Data into 3 channels and write the data into excel
+
+account.alfamart.data <- account.final.data%>%
+  filter(str_detect(Customer,"MT Alfa"))
+account.alfamart.data <- format(account.alfamart.data,scientific=F)
+
+account.indomart.data <- account.final.data%>%
+  filter(str_detect(Customer,"MT Indo"))
+account.indomart.data <- format(account.indomart.data,scientific=F)
 
 
+account.carrefour.data <- account.final.data%>%
+  filter(str_detect(Customer,"MT Carrefour"))%>%
+  select(-c(Sellout_Value:Sellout_Volume))
+account.carrefour.data <- format(account.carrefour.data,scientific=F)
+
+
+        
+writexl::write_xlsx(account.alfamart.data,paste0(directory.path,"/MT.alfamart.xlsx"))
+writexl::write_xlsx(account.indomart.data,paste0(directory.path,"/MT.Indomart.xlsx"))
+writexl::write_xlsx(account.carrefour.data,paste0(directory.path,"/MT.Carrefour.xlsx"))
