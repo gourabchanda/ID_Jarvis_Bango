@@ -69,7 +69,7 @@ bango.oi.df <- bango.oi.df[order(bango.oi.df$Customer,decreasing=T),]
 bango.sumatra.df <- dplyr::bind_rows(bango_region_sumatra_output,bango.region.sumatra)
 bango.sumatra.df%<>%mutate(Month_ymd=lubridate::dmy(paste("01-",Month,sep = "")))
 bango.sumatra.df%<>%arrange(Month_ymd)
-bango.sumatra.df <- bango.cej.df[order(bango.sumatra.df$Customer,decreasing=T),]
+bango.sumatra.df <- bango.sumatra.df[order(bango.sumatra.df$Customer,decreasing=T),]
 
 # The output column has a mismatch ( Need to work on it)
 bango.wj.df <- dplyr::bind_rows(bango_region_wj_output,bango.region.wj)
@@ -508,7 +508,7 @@ carrefour_bsofms30_output <- read_xlsx(paste0(basepack_account_path,"/",basepack
 carrefour_bkm135_output <-  read_xlsx(paste0(basepack_account_path,"/",basepack_bkm135[2]),sheet = 1,guess_max = 100)
 carrefour_bsof580_output <- read_xlsx(paste0(basepack_account_path,"/",basepack_bsof580[2]),sheet = 1,guess_max = 100)
 
-####################################################### Basepack - Account ( Alfamart) work in progress #################################################################
+####################################################### Basepack - Account ( Alfamart) #################################################################
 
 alfamart.bkm275%<>%convert(num(GSV:`Sell out Volume (KGs)`))
 alfamart.bkm275.df <- bind_rows(alfamart_bkm275_output,alfamart.bkm275)
@@ -565,18 +565,103 @@ alfamart.bkm135.df%<>%arrange(Month_ymd)
 alfamart.bkm135.df <- alfamart.bkm135.df[order(alfamart.bkm135.df$Customer,decreasing=T),]
 
 
-alfamart.bsof580%<>%convert(num(GSV:`Sell out Volume (KGs)`))
-alfamart.bsof580.df <- bind_rows(alfamart_bsof580_output,alfamart.bsof580)
+
+alfamart.bsof580_updated <- setnames(alfamart.bsof580,new = "Sales Qty",old = "Primary Sales Qty(PC)")
+alfamart.bsof580_updated%<>%convert(num(GSV:`Sell out Volume (KGs)`))
+alfamart.bsof580.df <- bind_rows(alfamart_bsof580_output,alfamart.bsof580_updated)
 alfamart.bsof580.df%<>%mutate(Month_ymd=lubridate::dmy(paste("01-",Month,sep = "")))
 alfamart.bsof580.df%<>%arrange(Month_ymd)
 alfamart.bsof580.df <- alfamart.bsof580.df[order(alfamart.bsof580.df$Customer,decreasing=T),]
 
 
 
+write_xlsx(alfamart.bkm275.df,paste0(working_directory,"/alfamart.bkm275.df.xlsx"))
+write_xlsx(alfamart.bkm620,paste0(working_directory,"/alfamart.bkm620.xlsx"))
+write_xlsx(alfamart.bkm220.df,paste0(working_directory,"/alfamart.bkm220.df.xlsx"))
+write_xlsx(alfamart.bkmp220.df,paste0(working_directory,"/alfamart.bkmp220.df.xlsx"))
+write_xlsx(alfamart.bkmp135.df,paste0(working_directory,"/alfamart.bkmp135.df.xlsx"))
+write_xlsx(alfamart.bsofs60.df,paste0(working_directory,"/alfamart.bsofs60.df.xlsx"))
+write_xlsx(alfamart.bsofms30.df,paste0(working_directory,"/alfamart.bsofms30.df.xlsx"))
+write_xlsx(alfamart.bkm135.df,paste0(working_directory,"/alfamart.bkm135.df.xlsx"))
+write_xlsx(alfamart.bsof580.df,paste0(working_directory,"/alfamart.bsof580.df.xlsx"))
+
+####################################################### Basepack - Account ( Carrefour) #################################################################
+
+
+Carrefour.bkm275%<>%convert(num(GSV:`Promo Agency Remuneration Fees & Commissions Consumer`))
+carrefour.bkm275.df <- bind_rows(carrefour_bkm275_output,Carrefour.bkm275)
+carrefour.bkm275.df%<>%mutate(Month_ymd=lubridate::dmy(paste("01-",Month,sep = "")))
+carrefour.bkm275.df%<>%arrange(Month_ymd)
+carrefour.bkm275.df <- carrefour.bkm275.df[order(carrefour.bkm275.df$Customer,decreasing=T),]
+
+Carrefour.bkm620%<>%convert(num(GSV:`Promo Agency Remuneration Fees & Commissions Consumer`))
+carrefour.bkm620.df <- bind_rows(carrefour_bkm620_output,Carrefour.bkm620)
+carrefour.bkm620.df%<>%mutate(Month_ymd=lubridate::dmy(paste("01-",Month,sep = "")))
+carrefour.bkm620.df%<>%arrange(Month_ymd)
+carrefour.bkm620.df <- carrefour.bkm620.df[order(carrefour.bkm620.df$Customer,decreasing=T),]
+
+
+Carrefour.bkm220%<>%convert(num(GSV:`Promo Agency Remuneration Fees & Commissions Consumer`))
+carrefour.bkm220.df <- bind_rows(carrefour_bkm220_output,Carrefour.bkm220)
+carrefour.bkm220.df%<>%mutate(Month_ymd=lubridate::dmy(paste("01-",Month,sep = "")))
+carrefour.bkm220.df%<>%arrange(Month_ymd)
+carrefour.bkm220.df <- carrefour.bkm220.df[order(carrefour.bkm220.df$Customer,decreasing=T),]
+
+#column names varies in carrefour_bkmp220_output and Carrefour.bkmp220 (month column)
+Carrefour.bkmp220%<>%convert(num(GSV:`Promo Agency Remuneration Fees & Commissions Consumer`))
+carrefour.bkmp220.df <- bind_rows(carrefour_bkmp220_output,Carrefour.bkmp220)
+carrefour.bkmp220.df%<>%mutate(Month_ymd=lubridate::dmy(paste("01-",Month,sep = "")))
+carrefour.bkmp220.df%<>%arrange(Month_ymd)
+carrefour.bkmp220.df <- carrefour.bkmp220.df[order(carrefour.bkmp220.df$Customer,decreasing=T),]
 
 
 
+Carrefour.bkmp135%<>%convert(num(GSV:`Promo Agency Remuneration Fees & Commissions Consumer`))
+carrefour.bkmp135.df <- bind_rows(carrefour_bkmp135_output,Carrefour.bkmp135)
+carrefour.bkmp135.df%<>%mutate(Month_ymd=lubridate::dmy(paste("01-",Month,sep = "")))
+carrefour.bkmp135.df%<>%arrange(Month_ymd)
+carrefour.bkmp135.df <- carrefour.bkmp135.df[order(carrefour.bkmp135.df$Customer,decreasing=T),]
 
+Carrefour.bsofs60%<>%convert(num(GSV:`Promo Agency Remuneration Fees & Commissions Consumer`))
+carrefour.bsofs60.df <- bind_rows(carrefour_bsofs60_output,Carrefour.bsofs60)
+carrefour.bsofs60.df%<>%mutate(Month_ymd=lubridate::dmy(paste("01-",Month,sep = "")))
+carrefour.bsofs60.df%<>%arrange(Month_ymd)
+carrefour.bsofs60.df <- carrefour.bsofs60.df[order(carrefour.bsofs60.df$Customer,decreasing=T),]
+
+
+Carrefour.bsofms30%<>%convert(num(GSV:`Promo Agency Remuneration Fees & Commissions Consumer`))
+carrefour.bsofms30.df <- bind_rows(carrefour_bsofms30_output,Carrefour.bsofms30)
+carrefour.bsofms30.df%<>%mutate(Month_ymd=lubridate::dmy(paste("01-",Month,sep = "")))
+carrefour.bsofms30.df%<>%arrange(Month_ymd)
+carrefour.bsofms30.df <- carrefour.bsofms30.df[order(carrefour.bsofms30.df$Customer,decreasing=T),]
+
+
+Carrefour.bkm135%<>%convert(num(GSV:`Promo Agency Remuneration Fees & Commissions Consumer`))
+carrefour.bkm135.df <- bind_rows(carrefour_bkm135_output,Carrefour.bkm135)
+carrefour.bkm135.df%<>%mutate(Month_ymd=lubridate::dmy(paste("01-",Month,sep = "")))
+carrefour.bkm135.df%<>%arrange(Month_ymd)
+carrefour.bkm135.df <- carrefour.bkm135.df[order(carrefour.bkm135.df$Customer,decreasing=T),]
+
+
+#have to work on this 
+carrefour.bsof580_updated <- setnames(Carrefour.bsof580,new = "Sales Qty",old = "Primary Sales Qty(PC)")
+carrefour.bsof580_updated%<>%convert(num())
+carrefour.bsof580.df <- bind_rows(carrefour_bsof580_output,carrefour.bsof580_updated)
+carrefour.bsof580.df%<>%mutate(Month_ymd=lubridate::dmy(paste("01-",Month,sep = "")))
+carrefour.bsof580.df%<>%arrange(Month_ymd)
+carrefour.bsof580.df <- carrefour.bsof580.df[order(carrefour.bsof580.df$Customer,decreasing=T),]
+
+
+
+write_xlsx(alfamart.bkm275.df,paste0(working_directory,"/alfamart.bkm275.df.xlsx"))
+write_xlsx(alfamart.bkm620,paste0(working_directory,"/alfamart.bkm620.xlsx"))
+write_xlsx(alfamart.bkm220.df,paste0(working_directory,"/alfamart.bkm220.df.xlsx"))
+write_xlsx(alfamart.bkmp220.df,paste0(working_directory,"/alfamart.bkmp220.df.xlsx"))
+write_xlsx(alfamart.bkmp135.df,paste0(working_directory,"/alfamart.bkmp135.df.xlsx"))
+write_xlsx(alfamart.bsofs60.df,paste0(working_directory,"/alfamart.bsofs60.df.xlsx"))
+write_xlsx(alfamart.bsofms30.df,paste0(working_directory,"/alfamart.bsofms30.df.xlsx"))
+write_xlsx(alfamart.bkm135.df,paste0(working_directory,"/alfamart.bkm135.df.xlsx"))
+write_xlsx(alfamart.bsof580.df,paste0(working_directory,"/alfamart.bsof580.df.xlsx"))
 
 
 
